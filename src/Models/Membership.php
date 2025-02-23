@@ -6,8 +6,8 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphPivot;
-use WRD\Teamsy\Events\JoinedTeam;
-use WRD\Teamsy\Events\LeftTeam;
+use WRD\Teamsy\Events\JoiningTeam;
+use WRD\Teamsy\Events\LeavingTeam;
 use WRD\Teamsy\Events\RoleChanging;
 use WRD\Teamsy\Capabilities\Role;
 use WRD\Teamsy\Contracts\Membershipish;
@@ -113,7 +113,7 @@ class Membership extends MorphPivot implements Membershipish{
 			$user = $membership->getMember();
 			$role = $membership->getRole();
 
-			event( new JoinedTeam( $team, $user, $role ) );
+			event( new JoiningTeam( $team, $user, $role ) );
 		});
 
 		static::updating(function( Membership $membership ){
@@ -134,7 +134,7 @@ class Membership extends MorphPivot implements Membershipish{
 			$user = $membership->getMember();
 			$role = $membership->getRole();
 
-			event( new LeftTeam( $team, $user, $role ) );
+			event( new LeavingTeam( $team, $user, $role ) );
 		});
 	}
 }

@@ -7,7 +7,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Foundation\Events\Dispatchable;
 use WRD\Teamsy\Capabilities\Role;
 
-class LeftTeam
+class JoiningTeam
 {
     use Dispatchable, SerializesModels;
 
