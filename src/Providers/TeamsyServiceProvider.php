@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use WRD\Teamsy\Capabilities\RolesRegistry;
 use WRD\Teamsy\Events\InviteCreated;
+use WRD\Teamsy\Events\LeavingTeam;
 use WRD\Teamsy\Events\MemberDeleting;
 use WRD\Teamsy\Events\RoleChanging;
 use WRD\Teamsy\Events\TeamCreated;
@@ -16,6 +17,7 @@ use WRD\Teamsy\Interop\WRD\Sleepy\WRDSleepyServiceProvider;
 use WRD\Teamsy\Listeners\AddOwner;
 use WRD\Teamsy\Listeners\CleanUpMember;
 use WRD\Teamsy\Listeners\CleanUpTeam;
+use WRD\Teamsy\Listeners\RevokeLeavingMemberInvitation;
 use WRD\Teamsy\Listeners\RevokeNoLongerAllowedInvitations;
 use WRD\Teamsy\Listeners\SendInvitation;
 use WRD\Teamsy\Models\Invitation;
@@ -75,9 +77,10 @@ final class TeamsyServiceProvider extends ServiceProvider {
 
 		Event::listen(TeamCreated::class, AddOwner::class);
 		Event::listen(TeamDeleting::class, CleanUpTeam::class);
+		Event::listen(LeavingTeam::class, RevokeLeavingMemberInvitation::class);
+		Event::listen(RoleChanging::class, RevokeNoLongerAllowedInvitations::class);
 
 		Event::listen(MemberDeleting::class, CleanUpMember::class);
-		Event::listen(RoleChanging::class, RevokeNoLongerAllowedInvitations::class);
 		
 		Event::listen(InviteCreated::class, SendInvitation::class);
 
