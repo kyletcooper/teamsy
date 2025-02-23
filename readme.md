@@ -37,18 +37,17 @@ Teamsy will automatically create a relationship from your team model to your use
 
 To aid in determining which of your user model's attributes are for teams, you should use the `#[Team()]` annotation on team relation functions. See the example below.
 
-> Whilst the Team attribute is optional, it allows Teamsy to get a list of all your model's teams using in the `getAllTeamRelationships` method. We use this to automatically remove memberships & sent invitations when a user is deleted.
+> Whilst the Team attribute is optional, it allows Teamsy to get a list of all your model's teams using in the `TeamInspector::getTeamRelationships` method. We use this to automatically remove memberships & sent invitations when a user is deleted.
 
 ```php
-use WRD\Teamsy\Attributes\Team;
 use WRD\Teamsy\Traits\JoinsTeam;
+use WRD\Teamsy\Models\Relations\HasTeam;
 
 class User{
 	use JoinsTeam;
 
-	#[Team()]
-	public function organisations(): MorphToMany{
-		return $this->joinsTeam(Organisation::class);
+	public function hasTeam(): HasTeam{
+		return $this->hasTeam(Organisation::class);
 	}
 }
 ```
@@ -117,9 +116,9 @@ trait JoinsTeam{
 	/**
 	  * Create a relationship between the user an a team.
 	  *
-	  * @return \Illuminate\Database\Eloquent\Relations\MorphToMany<Team, $this>
+	  * @return \Illuminate\Database\Eloquent\Relations\HasTeam<Team, $this>
 	  */
-	public function joinsTeam( string $team_class );
+	public function hasTeam( string $team_class );
 
 	/**
 	  * Query the relationship for a user's pending invitations.
@@ -127,85 +126,76 @@ trait JoinsTeam{
 	  * @return \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder
 	  */
 	public function pendingInvitations();
-	
+
 	/**
 	 * Query the relationship for a user's declined invitations.
 	 *
 	 * @return \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder
 	 */
 	public function getDeclinedInvitations();
-	
+
 	/**
 	 * Get the relationship for a user's sent invitations.
 	 *
 	 * @return \Illuminate\Database\Eloquent\Relations\HasMany<Team, $this>
 	 */
 	public function sentInvitations();
-	
+
 	/**
 	 * Get the user's membership to a team.
 	 *
 	 * @return \WRD\Teamsy\Models\Membership|null
 	 */
 	public function getMembershipIn( Model $team, string $relationship = null );
-	
+
 	/**
 	 * Get the user's role in a team.
 	 *
 	 * @return \WRD\Teamsy\Capabilities\Role
 	 */
 	public function getRoleIn( Model $team, string $relationship = null );
-	
+
 	/**
 	 * Check if the user can perform a capability in a team.
 	 *
 	 * @return bool
 	 */
 	public function canIn( Model $team, string $capability, string $relationship = null );
-	
+
 	/**
 	 * Set the user's role in a team.
 	 *
 	 * @return \WRD\Teamsy\Models\Role
 	 */
 	public function setRoleIn( Model $team, string $role, string $relationship = null );
-	
+
 	/**
 	 * Check if the user is in a team.
 	 *
 	 * @return void
 	 */
 	public function inTeam( Model $team );
-	
+
 	/**
 	 * Add the user to a team.
 	 *
 	 * @return void
 	 */
 	public function joinTeam( Model $team, string $role_id );
-	
+
 	/**
 	 * Invite the user to a team.
 	 *
 	 * @return \WRD\Teamsy\Models\Invitation
 	 */
 	public function inviteToTeam( Model $team, string $role_id, ?Model $invitor = null, ?string $message = null );
-	
+
 	/**
 	 * Remove the user from a team.
 	 *
 	 * @return void
 	 */
 	public function leaveTeam( Model $team, string $relationship = null );
-	
-	/**
-	 * Get all of this model's relationships that are a team relationship.
-	 *
-	 * You should denote team relations with the #[Team()] annotation.
-	 *
-	 * @return string[]
-	 */
-	public function getAllTeamRelationships();
 }
 ```
 
@@ -415,42 +405,42 @@ class Invitation extends Model implements Membershipish{
 	 * @return bool
 	 */
 	public function isDeclined();
-	
+
 	/**
 	 * Revoke an invitation so the invitee cannot accept it.
 	 *
 	 * @return void
 	 */
 	public function revoke();
-	
+
 	/**
 	 * Accept an invitation and join the team.
 	 *
 	 * @return void
 	 */
 	public function accept();
-	
+
 	/**
 	 * Decline an invitation, such that it cannot be sent again.
 	 *
 	 * @return void
 	 */
 	public function decline();
-	
+
 	/**
 	 * Invite a user to join a team.
 	 *
 	 * @return \WRD\Teamsy\Models\Invitation
 	 */
 	static public function createForUser( Model $team, Model $invitee, string $role_id, Model $sender = null, string $message = null );
-	
+
 	/**
 	 * Checks if there is an invitation for an email address in a team.
 	 *
 	 * @return bool
 	 */
 	static public function existsForEmail( Model $team, string $email );
-	
+
 	/**
 	 * Invite a new user by their email address to join a team.
 	 *
