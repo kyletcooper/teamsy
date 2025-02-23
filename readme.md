@@ -490,7 +490,7 @@ php artisan vendor:publish --tag=teamsy-policy
 
 Teamsy will automatically detect if you're using [Sleepy](https://github.com/kyletcooper/sleepy) and will register some helpful macros to allow you to add Teamsy API routes.
 
-These routes use the `MembershipPolicy` and `InvitationPolicy` to guard them. You can learn more about these in the [policies(#policies) section.
+These routes use the `MembershipPolicy` and `InvitationPolicy` to guard them. You can learn more about these in the [policies](#policies) section.
 
 ```php
 API::model( Team::class, function(){
