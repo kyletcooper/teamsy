@@ -3,10 +3,21 @@
 namespace WRD\Teamsy\Providers;
 
 use Illuminate\Foundation\Console\AboutCommand;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use WRD\Teamsy\Capabilities\RolesRegistry;
+use WRD\Teamsy\Events\InviteCreated;
+use WRD\Teamsy\Events\MemberDeleting;
+use WRD\Teamsy\Events\RoleChanging;
+use WRD\Teamsy\Events\TeamCreated;
+use WRD\Teamsy\Events\TeamDeleting;
 use WRD\Teamsy\Interop\WRD\Sleepy\WRDSleepyServiceProvider;
+use WRD\Teamsy\Listeners\AddOwner;
+use WRD\Teamsy\Listeners\CleanUpMember;
+use WRD\Teamsy\Listeners\CleanUpTeam;
+use WRD\Teamsy\Listeners\RevokeNoLongerAllowedInvitations;
+use WRD\Teamsy\Listeners\SendInvitation;
 use WRD\Teamsy\Models\Invitation;
 use WRD\Teamsy\Models\Membership;
 use WRD\Teamsy\Support\Facades\Roles;
@@ -62,9 +73,21 @@ final class TeamsyServiceProvider extends ServiceProvider {
 		Gate::policy(Membership::class, config("teamsy.policy.membership"));
 		Gate::policy(Invitation::class, config("teamsy.policy.invitation"));
 
+		Event::listen(TeamCreated::class, AddOwner::class);
+		Event::listen(TeamDeleting::class, CleanUpTeam::class);
+
+		Event::listen(MemberDeleting::class, CleanUpMember::class);
+		Event::listen(RoleChanging::class, RevokeNoLongerAllowedInvitations::class);
+		
+		Event::listen(InviteCreated::class, SendInvitation::class);
+
 		$this->publishes([
 			__DIR__ . '/../../config/teamsy.php' => config_path( 'teamsy.php' ),
 		], ['teamsy-config', 'teamsy-install']);
+
+		$this->publishesMigrations([
+			__DIR__ . '/../../database/migrations' => database_path('migrations'),
+		], ['teams-migrations', 'teamsy-install']);
 			
 		$this->publishes([
 			__DIR__ . '/../Notifications/InviteCreatedNotification.php' => './app/Notifications/InviteCreatedNotification.php',
@@ -74,9 +97,5 @@ final class TeamsyServiceProvider extends ServiceProvider {
 			__DIR__ . '/../Policies/InvitationPolicy.php' => './app/Policies/InvitationPolicy.php',
 			__DIR__ . '/../Policies/MembershipPolicy.php' => './app/Policies/MembershipPolicy.php',
 		], 'teamsy-policy');
-
-		$this->publishesMigrations([
-			__DIR__ . '/../../database/migrations' => database_path('migrations'),
-		], ['teams-migrations', 'teamsy-install']);
 	}
 }

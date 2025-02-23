@@ -33,6 +33,26 @@ php artisan vendor:publish --tag=teamsy-install
 
 You just need to add the `JoinsTeam` trait to your user model and the `HasTeam` trait to your team models.
 
+Teamsy will automatically create a relationship from your team model to your user, called `members`. On your team model, make sure to create the inverse relationship. You can use the `joinsTeam` function to build this relationship.
+
+To aid in determining which of your user model's attributes are for teams, you should use the `#[Team()]` annotation on team relation functions. See the example below.
+
+> Whilst the Team attribute is optional, it allows Teamsy to get a list of all your model's teams using in the `getAllTeamRelationships` method. We use this to automatically remove memberships & sent invitations when a user is deleted.
+
+```php
+use WRD\Teamsy\Attributes\Team;
+use WRD\Teamsy\Traits\JoinsTeam;
+
+class User{
+	use JoinsTeam;
+
+	#[Team()]
+    public function organisations(): MorphToMany{
+		return $this->joinsTeam(Organisation::class);
+    }
+}
+```
+
 ## Roles
 
 Roles are defined in the application and are not stored in the database. They are referenced by their ID. If the role ID saved in the database is no longer available in the application logic then Teamsy will default to a Guest role, with only one capability - `exist`.
@@ -177,6 +197,15 @@ trait JoinsTeam{
 	 * @return void
 	 */
 	public function leaveTeam( Model $team, string $relationship = null );
+
+	/**
+	 * Get all of this model's relationships that are a team relationship.
+	 *
+	 * You should denote team relations with the #[Team()] annotation.
+	 *
+	 * @return string[]
+	 */
+	public function getAllTeamRelationships();
 }
 ```
 
@@ -291,6 +320,7 @@ Teamsy includes an invitation system out of the box. Invitations are attached to
 - Initation cannot be created if there is a user with the email address already in the team.
 - Invitations can have a sender attached.
 - Invitations can have a custom message.
+- Invitations are automatically deleted if the team is deleted, the sender is deleted or the sender is demoted to a role without permission to create invitations.
 - Users can choose to reject an invitation, soft-deleting it, so that they are no re-invited.
 
 To customise invitation notifications public the invitation notification with the following command:
@@ -434,12 +464,12 @@ class Invitation extends Model implements Membershipish{
 
 To protect the Membership & Invitation models, Teamsy provides default policies. These defer to their attached team to query to following capabilities.
 
-| Capability      | Description                       |
-| --------------- | --------------------------------- |
-| invites.viewAny | Can view all invites to the team. |
-| invites.view    | View invitations to the team.     |
-| invites.create  | Invite new users to the team.     |
-| invites.destroy | Revoke invitations.               |
+| Capability         | Description                       |
+| ------------------ | --------------------------------- |
+| invitation.viewAny | Can view all invites to the team. |
+| invitation.view    | View invitations to the team.     |
+| invitation.create  | Invite new users to the team.     |
+| invitation.destroy | Revoke invitations.               |
 
 Additionally, the `InvitationPolicy` contains a method for responding (`responsd`, meaning to accept or decline) an Invitation, which only the invitee will pass.
 
