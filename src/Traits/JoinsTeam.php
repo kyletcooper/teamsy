@@ -6,26 +6,41 @@ use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Support\Str;
-use ReflectionClass;
-use ReflectionMethod;
 use WRD\Teamsy\Attributes\Team;
 use WRD\Teamsy\Capabilities\Role;
 use WRD\Teamsy\Events\MemberCreated;
 use WRD\Teamsy\Events\MemberDeleting;
 use WRD\Teamsy\Models\Invitation;
 use WRD\Teamsy\Models\Membership;
+use WRD\Teamsy\Models\Relations\HasTeam;
 use WRD\Teamsy\Support\Facades\Roles;
 
 trait JoinsTeam {
 	/**
      * Create a relationship between the user an a team.
-	 * 
-	 * You should denote team relations with the #[Team()] annotation.
      *
      * @return \Illuminate\Database\Eloquent\Relations\MorphToMany<Team, $this>
      */
-	public function joinsTeam( string $team_class ): MorphToMany{
-		return $this->morphedByMany( $team_class, 'team', 'memberships', 'member_id' )
+	public function hasTeam( string $team_class ): MorphToMany{
+		$related = $team_class;
+		$name = 'team';
+		$table = 'memberships';
+		$foreignPivotKey = 'member_id';
+		$relatedPivotKey = $name.'_id';
+		
+		$instance = $this->newRelatedInstance( $related );
+		$relatedKey = $instance->getKeyName();
+		$query = $instance->newQuery();
+		
+		$parent = $this;
+		$parentKey = $this->getKeyName();
+
+		$relationName = $this->guessBelongsToManyRelation();
+		$inverse = true;
+
+		$relationship = new HasTeam($query, $parent, $name, $table, $foreignPivotKey, $relatedPivotKey, $parentKey, $relatedKey, $relationName, $inverse);
+
+		return $relationship
 			->withPivot('id', 'role_id')
 			->withTimestamps()
 			->as('membership')
@@ -142,29 +157,6 @@ trait JoinsTeam {
 	 */
 	public function leaveTeam( Model $team, string $relationship = null ): void{
 		$this->getMembershipIn( $team, $relationship )->revoke();
-	}
-
-	/**
-	 * Get all of this model's relationships that are a team relationship.
-	 * 
-	 * You should denote team relations with the #[Team()] annotation.
-	 * 
-	 * @return string[]
-	 */
-	public function getAllTeamRelationships(): array{
-		$reflection = new ReflectionClass( static::class );
-		$methods = $reflection->getMethods( ReflectionMethod::IS_PUBLIC );
-		$teams = [];
-
-		foreach( $methods as $method ){
-			$attributes = $method->getAttributes( Team::class );
-
-			if( count( $attributes ) > 0 ){
-				$teams[] = $method->getName();
-			}
-		}
-
-		return $teams;
 	}
 
 	/**
