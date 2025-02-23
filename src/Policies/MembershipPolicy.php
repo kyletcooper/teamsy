@@ -50,6 +50,11 @@ class MembershipPolicy{
 			return false;
 		}
 
+		if( $newRole->hasFlag( RoleFlag::Owner ) ){
+			// You may not premote yourself to owner.
+			return false;
+		}
+
 		return $membership->getTeam()->userCan( $user, 'membership.update' );
 	}
 
