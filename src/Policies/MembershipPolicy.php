@@ -3,6 +3,8 @@
 namespace WRD\Teamsy\Policies;
 
 use Illuminate\Database\Eloquent\Model;
+use WRD\Teamsy\Capabilities\Role;
+use WRD\Teamsy\Capabilities\RoleFlag;
 use WRD\Teamsy\Models\Membership;
 
 class MembershipPolicy{
@@ -39,15 +41,34 @@ class MembershipPolicy{
 	}
 
 	/**
+	 * Determine if the role of a given membership can be updated by the user.
+	 */
+	public function updateRole( Model $user, Membership $membership, Role $newRole ): bool
+	{
+		if( $membership->getRole()->hasFlag( RoleFlag::Owner ) ){
+			// Nobody can alter the owner's role.
+			return false;
+		}
+
+		return $membership->getTeam()->userCan( $user, 'membership.update' );
+	}
+
+	/**
 	 * Determine if the given membership can be deleted by the user.
 	 */
 	public function destroy( Model $user, Membership $membership): bool
 	{
+		if( $membership->getRole()->hasFlag( RoleFlag::Owner ) ){
+			// Nobody can remove the owner for their own team.
+			return false;
+		}
+
 		if( $membership->getTeam()->userCan( $user, 'membership.destroy' ) ){
 			return true;
 		}
 
 		if( $membership->getMember()->is( $user ) ){
+			// You can always remove yourself from a team.
 			return true;
 		}
 

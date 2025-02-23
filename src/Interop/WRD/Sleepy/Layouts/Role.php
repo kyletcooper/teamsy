@@ -5,6 +5,7 @@ namespace WRD\Teamsy\Interop\WRD\Sleepy\Layouts;
 use Illuminate\Support\Str;
 use WRD\Sleepy\Layouts\Layout;
 use WRD\Sleepy\Schema\Schema;
+use WRD\Teamsy\Capabilities\RoleFlag;
 
 class Role extends Layout{
 	public function schema(): Schema{
@@ -13,7 +14,8 @@ class Role extends Layout{
 			'scope' => Schema::string(),
 			'title' => Schema::string(),
 			'description' => Schema::string(),
-			'capabilities' => Schema::array( Schema::string() )
+			'capabilities' => Schema::array( Schema::string() ),
+			'flags' => Schema::array( Schema::string()->enum( RoleFlag::cases() ) )
 		]);
 	}
 
@@ -30,7 +32,8 @@ class Role extends Layout{
 			'scope' => $scope,
 			'title' => $role->getTitle(),
 			'description' => $role->getDescription(),
-			'capabilities' => $role->getCapabilities()
+			'capabilities' => $role->getCapabilities(),
+			'flags' => $role->getFlags(),
 		];
 	}
 }

@@ -2,13 +2,16 @@
 
 namespace WRD\Teamsy\Interop\WRD\Sleepy\Controllers;
 
+use Illuminate\Support\Facades\Gate;
 use WRD\Teamsy\Rules\ValidRole;
 use WRD\Sleepy\Fields\Field;
+use WRD\Sleepy\Http\Exceptions\ApiUnauthorizedException;
 use WRD\Sleepy\Http\Requests\ApiRequest;
 use WRD\Sleepy\Layouts\Layout;
 use WRD\Sleepy\Support\Facades\API;
 use WRD\Teamsy\Interop\WRD\Sleepy\Layouts\Membership;
 use WRD\Teamsy\Models\Membership as ModelsMembership;
+use WRD\Teamsy\Support\Facades\Roles;
 
 class MembershipController extends MembershipishController{
 	/**
@@ -66,8 +69,19 @@ class MembershipController extends MembershipishController{
 	 */
 	public function update( ApiRequest $request ){
 		$membership = $this->getModel( $request );
+		$values = $request->values();
 
-		$membership->role_id = $request->values()->get( "role" );
+		if( $values->has('role') ){
+			// Check if the user can update the role.
+			$newRole = Roles::find( $values->get( "role" ) );
+			$canEditRole = Gate::allows( 'updateRole', [ $membership, $newRole ] );
+
+			if( ! $canEditRole ){
+				abort( new ApiUnauthorizedException() );
+			}
+		}
+
+		$membership->role_id = $values->get( "role" );
 		$membership->save();
 
 		return $this->single( $membership );
