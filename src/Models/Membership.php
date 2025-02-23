@@ -6,6 +6,9 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphPivot;
+use WRD\Teamsy\Events\JoinedTeam;
+use WRD\Teamsy\Events\LeftTeam;
+use WRD\Teamsy\Events\RoleChanging;
 use WRD\Teamsy\Capabilities\Role;
 use WRD\Teamsy\Contracts\Membershipish;
 use WRD\Teamsy\Support\Facades\Roles;
@@ -97,5 +100,41 @@ class Membership extends MorphPivot implements Membershipish{
 	 */
 	public function revoke(): void{
 		$this->delete();
+	}
+
+	/**
+	 * Boot the model.
+	 * 
+	 * @return void
+	 */
+	protected static function booted(): void{
+		static::created(function( Membership $membership ){
+			$team = $membership->getTeam();
+			$user = $membership->getMember();
+			$role = $membership->getRole();
+
+			event( new JoinedTeam( $team, $user, $role ) );
+		});
+
+		static::updating(function( Membership $membership ){
+			if( $membership->isDirty( 'role_id' ) ){
+				$team = $membership->getTeam();
+				$user = $membership->getMember();
+				$after = $membership->getRole();
+				
+				$prevRoleId = $membership->getOriginal('role_id');
+				$before = Roles::find( $prevRoleId, $this->getTeamType() ) ?? Roles::guest();
+				
+				event( new RoleChanging( $team, $user, $before, $after ) );
+			}
+		});
+
+		static::deleting(function( Membership $membership ){
+			$team = $membership->getTeam();
+			$user = $membership->getMember();
+			$role = $membership->getRole();
+
+			event( new LeftTeam( $team, $user, $role ) );
+		});
 	}
 }

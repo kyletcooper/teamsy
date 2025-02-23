@@ -3,11 +3,12 @@
 namespace WRD\Teamsy\Traits;
 
 use Exception;
-use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use WRD\Teamsy\Capabilities\Role;
+use WRD\Teamsy\Events\TeamCreated;
+use WRD\Teamsy\Events\TeamDeleting;
 use WRD\Teamsy\Models\Invitation;
 use WRD\Teamsy\Models\Membership;
 use WRD\Teamsy\Support\Facades\Roles;
@@ -43,6 +44,17 @@ trait HasTeam {
 	 */
 	public function getRoleOf( Model $user ): Role{
 		return $this->getMembershipOf( $user )?->getRole() ?? Roles::guest();
+	}
+
+	/**
+	 * Check if a role can perform a capability in this team.
+	 * 
+	 * @return bool
+	 */
+	public function roleCan( string $role_id, string $capability ): bool{
+		$role = Roles::find( $role_id, static::class ) ?? Roles::guest();
+
+		return $role->hasCapability( $capability );
 	}
 
 	/**
@@ -165,13 +177,11 @@ trait HasTeam {
 	 */
 	protected static function bootedHasTeam(): void{
 		static::created(function( Model $team ){
-			// Add the user as an owner when they create a new team.
-			$team->addMember( Auth::current(), 'owner' );
+			event( new TeamCreated( $team ) );
 		});
 
-		static::deleting(function(){
-			// Delete invitations to this team when the team is deleted.
-			$this->invitations()->delete();
+		static::deleting(function( Model $team ){
+			event( new TeamDeleting( $team ) );
 		});
 	}
 }

@@ -7,14 +7,34 @@ use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Notification;
 use WRD\Teamsy\Capabilities\Role;
 use WRD\Teamsy\Contracts\Membershipish;
 use WRD\Teamsy\Enums\InvitationStatus;
+use WRD\Teamsy\Events\InviteAccepted;
+use WRD\Teamsy\Events\InviteCreated;
+use WRD\Teamsy\Events\InviteDeclined;
+use WRD\Teamsy\Events\InviteRevoked;
+use WRD\Teamsy\Support\Ensure;
 use WRD\Teamsy\Support\Facades\Roles;
 
 class Invitation extends Model implements Membershipish{
-    use SoftDeletes;
+    use SoftDeletes {
+        forceDelete as protected _forceDelete;
+    }
+
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     *
+     * @var bool
+     */
+    public $incrementing = true;
+
+	/**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'invitations';
 
     /**
      * The attributes that aren't mass assignable.
@@ -122,25 +142,6 @@ class Invitation extends Model implements Membershipish{
 	}
 
     /**
-     * Send the notifications to the user, if they exist, and the email.
-     * 
-     * @return void
-     */
-    public function dispatchNotifications(): void{
-        $notificationClass = config("teamsy.notifications.inviteCreated");
-        $notification = new $notificationClass( $this );
-        $user = $this->getInvitee();
-        
-        if( ! is_null( $user ) ){
-            $user->notify( $notification );
-        }
-        else{
-            Notification::route( 'mail', $this->email )
-                ->notify( $notification );
-        }
-    }
-
-    /**
      * Check if an invitation has been declined.
      * 
      * @return bool
@@ -150,11 +151,39 @@ class Invitation extends Model implements Membershipish{
     }
 
     /**
+     * Override the model's delete function to give a warning if called incorrectly.
+     * 
+     * Callers should use the revoke, accept or decline methods and not call delete directly.
+     * 
+     * @return ?bool
+     */
+    public function delete(): ?bool{
+        Ensure::callerIn([ 'decline', '_forceDelete' ]);
+
+        return parent::delete();
+    }
+
+    /**
+     * Override the model's force delete function to give a warning if called incorrectly.
+     * 
+     * Callers should use the revoke, accept or decline methods and not call delete directly.
+     * 
+     * @return ?bool
+     */
+    public function forceDelete(): ?bool{
+        Ensure::callerIn([ 'accept', 'revoke' ]);
+
+        return $this->_forceDelete();
+    }
+
+    /**
      * Revoke an invitation so the invitee cannot accept it.
      * 
      * @return void
      */
     public function revoke(): void{
+        event( new InviteRevoked( $this ) );
+
         $this->forceDelete();
     }
 
@@ -177,6 +206,8 @@ class Invitation extends Model implements Membershipish{
 
         $team->addMember( $user, $this->role_id );
 
+        event( new InviteAccepted( $this ) );
+
         $this->forceDelete();
     }
 
@@ -186,6 +217,8 @@ class Invitation extends Model implements Membershipish{
      * @return void
      */
     public function decline(): void{
+        event( new InviteDeclined( $this ) );
+
         $this->delete();
     }
 
@@ -239,9 +272,14 @@ class Invitation extends Model implements Membershipish{
         ]);
     }
 
-    protected static function booted(){
-        static::created(function( Invitation $invitation ){
-            $invitation->dispatchNotifications();
-        });
+    /**
+	 * Boot the model.
+	 * 
+	 * @return void
+	 */
+	protected static function booted(): void{
+		static::created(function( Invitation $invitation ){
+			event( new InviteCreated( $invitation ) );
+		});
     }
 }

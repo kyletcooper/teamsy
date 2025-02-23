@@ -19,7 +19,7 @@ class InvitationPolicy{
 	 */
 	public function create( Model $user, Model $team ): bool
 	{
-		return $team->userCan( $user, 'invitation.viewAny' );
+		return $team->userCan( $user, 'invitation.create' );
 	}
 
 	/**

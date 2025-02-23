@@ -6,7 +6,12 @@ use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Support\Str;
+use ReflectionClass;
+use ReflectionMethod;
+use WRD\Teamsy\Attributes\Team;
 use WRD\Teamsy\Capabilities\Role;
+use WRD\Teamsy\Events\MemberCreated;
+use WRD\Teamsy\Events\MemberDeleting;
 use WRD\Teamsy\Models\Invitation;
 use WRD\Teamsy\Models\Membership;
 use WRD\Teamsy\Support\Facades\Roles;
@@ -14,6 +19,8 @@ use WRD\Teamsy\Support\Facades\Roles;
 trait JoinsTeam {
 	/**
      * Create a relationship between the user an a team.
+	 * 
+	 * You should denote team relations with the #[Team()] annotation.
      *
      * @return \Illuminate\Database\Eloquent\Relations\MorphToMany<Team, $this>
      */
@@ -135,5 +142,43 @@ trait JoinsTeam {
 	 */
 	public function leaveTeam( Model $team, string $relationship = null ): void{
 		$this->getMembershipIn( $team, $relationship )->revoke();
+	}
+
+	/**
+	 * Get all of this model's relationships that are a team relationship.
+	 * 
+	 * You should denote team relations with the #[Team()] annotation.
+	 * 
+	 * @return string[]
+	 */
+	public function getAllTeamRelationships(): array{
+		$reflection = new ReflectionClass( static::class );
+		$methods = $reflection->getMethods( ReflectionMethod::IS_PUBLIC );
+		$teams = [];
+
+		foreach( $methods as $method ){
+			$attributes = $method->getAttributes( Team::class );
+
+			if( count( $attributes ) > 0 ){
+				$teams[] = $method->getName();
+			}
+		}
+
+		return $teams;
+	}
+
+	/**
+	 * Boot the trait.
+	 * 
+	 * @return void
+	 */
+	protected static function bootedHasTeam(): void{
+		static::created(function( Model $user ){
+			event( new MemberCreated( $user ) );
+		});
+
+		static::deleting(function( Model $user ){
+			event( new MemberDeleting( $user ) );
+		});
 	}
 }
