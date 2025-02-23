@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use WRD\Teamsy\Capabilities\RolesRegistry;
+use WRD\Teamsy\Console\Commands\AbandonedCommand;
 use WRD\Teamsy\Events\InviteCreated;
 use WRD\Teamsy\Events\LeavingTeam;
 use WRD\Teamsy\Events\MemberDeleting;
@@ -22,7 +23,6 @@ use WRD\Teamsy\Listeners\RevokeNoLongerAllowedInvitations;
 use WRD\Teamsy\Listeners\SendInvitation;
 use WRD\Teamsy\Models\Invitation;
 use WRD\Teamsy\Models\Membership;
-use WRD\Teamsy\Support\Facades\Roles;
 
 final class TeamsyServiceProvider extends ServiceProvider {
 	/**
@@ -83,6 +83,12 @@ final class TeamsyServiceProvider extends ServiceProvider {
 		Event::listen(MemberDeleting::class, CleanUpMember::class);
 		
 		Event::listen(InviteCreated::class, SendInvitation::class);
+
+		if ($this->app->runningInConsole()) {
+			$this->commands([
+				AbandonedCommand::class
+			]);
+		}
 
 		$this->publishes([
 			__DIR__ . '/../../config/teamsy.php' => config_path( 'teamsy.php' ),
