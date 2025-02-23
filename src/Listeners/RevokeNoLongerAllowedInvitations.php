@@ -2,9 +2,7 @@
 
 namespace WRD\Teamsy\Listeners;
 
-use Illuminate\Support\Facades\Gate;
 use WRD\Teamsy\Events\RoleChanging;
-use WRD\Teamsy\Models\Invitation;
 
 class RevokeNoLongerAllowedInvitations
 {
