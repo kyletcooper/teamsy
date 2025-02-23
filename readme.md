@@ -513,11 +513,3 @@ API::model( Team::class, function(){
 ```
 
 > :bulb: Under the hood, `API::teamsy()` is just a shorthand for running `API::memberships()`, `API::invitations()` and `API::roles()` all at once.
-
-## To-do
-
-- [ ] Add console command to clean up any teams with no users.
-
-- [ ] Add protection, preventing a user from changing their role to owner.
-
-- [ ] Add protection preventing the owner from being removed or demoted.
