@@ -45,7 +45,7 @@ class MembershipGenerator extends Generator {
 		API::route( $this->path . '/{membershipish}', function() {
 
 			API::endpoint( 'GET', [$this->controller, "show" ] )
-			->auth( fn( ApiRequest $req ) => Gate::allows( 'view', $req->route()->parameter( 'membershipish' ) ) )
+				->auth( fn( ApiRequest $req ) => Gate::allows( 'view', $req->route()->parameter( 'membershipish' ) ) )
 				->responses( 200, 401, 403 )
 				->describe( 'View a membership in this team.' );
 			
