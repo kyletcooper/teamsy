@@ -6,14 +6,14 @@ Teamsy allows you to convert any model into a team with it's flexible membership
 
 > :warning: This package is under active development.
 
-**Contents**
-[Installation](#installation)
-[Setup](#setup)
-[Roles](#roles)
-[Traits](#traits)
-[Invitations](#invitations)
-[Policies](#policies)
-[Sleepy Integration](#sleepy-integration)
+**Contents**  
+[Installation](#installation)  
+[Setup](#setup)  
+[Roles](#roles)  
+[Traits](#traits)  
+[Invitations](#invitations)  
+[Policies](#policies)  
+[Sleepy Integration](#sleepy-integration)  
 
 ## Installation
 
