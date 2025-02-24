@@ -13,7 +13,7 @@ Teamsy allows you to convert any model into a team with it's flexible membership
 [Traits](#traits)  
 [Invitations](#invitations)  
 [Policies](#policies)  
-[Sleepy Integration](#sleepy-integration)  
+[Sleepy Integration](#sleepy-integration)
 
 ## Installation
 
@@ -33,11 +33,9 @@ php artisan vendor:publish --tag=teamsy-install
 
 You just need to add the `JoinsTeam` trait to your user model and the `HasTeam` trait to your team models.
 
-Teamsy will automatically create a relationship from your team model to your user, called `members`. On your team model, make sure to create the inverse relationship. You can use the `joinsTeam` function to build this relationship.
+Teamsy will automatically create a relationship from your team model to your user, called `members`. On your team model, make sure to create the inverse relationship. You can use the `hasTeam` function to build this relationship.
 
-To aid in determining which of your user model's attributes are for teams, you should use the `#[Team()]` annotation on team relation functions. See the example below.
-
-> Whilst the Team attribute is optional, it allows Teamsy to get a list of all your model's teams using in the `TeamInspector::getTeamRelationships` method. We use this to automatically remove memberships & sent invitations when a user is deleted.
+> The `HasTeam` relation type uses a `MorphToMany` relationship under the hood.
 
 ```php
 use WRD\Teamsy\Traits\JoinsTeam;

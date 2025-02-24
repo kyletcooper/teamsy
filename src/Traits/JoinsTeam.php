@@ -19,9 +19,9 @@ trait JoinsTeam {
 	/**
      * Create a relationship between the user an a team.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\MorphToMany<Team, $this>
+     * @return \Illuminate\Database\Eloquent\Relations\HasTeam<Team, $this>
      */
-	public function hasTeam( string $team_class ): MorphToMany{
+	public function hasTeam( string $team_class ): HasTeam{
 		$related = $team_class;
 		$name = 'team';
 		$table = 'memberships';
